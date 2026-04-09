@@ -7,7 +7,7 @@
       "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.vp.json",
       "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.png",
       "author": null,
-      "contributor": "@amm554",
+      "contributor": "muratmaga",
       "description": null
     },
     {
@@ -19,6 +19,16 @@
       "author": null,
       "contributor": "muratmaga",
       "description": null
+    },
+    {
+      "prefix": "Murat2",
+      "json_filename": "Murat2.vp.json",
+      "png_filename": "Murat2.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat2.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat2.png",
+      "author": "murat's alter ego",
+      "contributor": "41898282+github-actions[bot]",
+      "description": "staging trial2"
     }
   ]
 }
