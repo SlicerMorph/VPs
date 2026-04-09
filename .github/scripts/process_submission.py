@@ -57,7 +57,10 @@ def post_comment(issue_number, body):
 
 
 def download(url, dest):
-    req = urllib.request.Request(url, headers={"User-Agent": "SlicerMorphVPs-bot/1"})
+    headers = {"User-Agent": "SlicerMorphVPs-bot/1"}
+    if "github.com/user-attachments/" in url and TOKEN:
+        headers["Authorization"] = f"token {TOKEN}"
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp, open(dest, "wb") as fh:
         fh.write(resp.read())
 
