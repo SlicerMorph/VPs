@@ -56,13 +56,40 @@ def post_comment(issue_number, body):
         pass
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # suppress automatic redirect following
+
+
 def download(url, dest):
-    headers = {"User-Agent": "SlicerMorphVPs-bot/1"}
-    if "github.com/user-attachments/" in url and TOKEN:
-        headers["Authorization"] = f"token {TOKEN}"
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req) as resp, open(dest, "wb") as fh:
-        fh.write(resp.read())
+    # Phase 1: hit the GitHub attachment URL with auth to get the CDN redirect
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "SlicerMorphVPs-bot/1",
+            "Authorization": f"token {TOKEN}",
+        },
+    )
+    opener = urllib.request.build_opener(_NoRedirect())
+    try:
+        with opener.open(req) as resp:
+            # No redirect — serve directly
+            with open(dest, "wb") as fh:
+                fh.write(resp.read())
+            return
+    except urllib.error.HTTPError as e:
+        if e.code not in (301, 302, 303, 307, 308):
+            raise
+        cdn_url = e.headers.get("Location")
+
+    # Phase 2: fetch from CDN without auth (S3 rejects GitHub tokens)
+    cdn_req = urllib.request.Request(
+        cdn_url,
+        headers={"User-Agent": "SlicerMorphVPs-bot/1"},
+    )
+    with urllib.request.urlopen(cdn_req) as resp:
+        with open(dest, "wb") as fh:
+            fh.write(resp.read())
 
 
 def run(*args):
