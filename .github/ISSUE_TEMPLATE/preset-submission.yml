@@ -1,0 +1,71 @@
+name: Submit a Volume Rendering Preset
+description: Share a volume-rendering preset (.vp.json + preview PNG) with the SlicerMorph community.
+title: "New preset: "
+labels:
+  - preset-submission
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## How to submit
+
+        1. Use the **SubmitVolumeRenderingPreset** module in SlicerMorph to export your preset files.
+        2. Fill in the fields below.
+        3. **Drag and drop both files** (`<name>.vp.json` and `<name>.png`) into the text area at the bottom of this form.
+        4. Click **Submit new issue**.
+
+        A maintainer will validate and merge your preset — you'll be credited by your GitHub username.
+
+  - type: input
+    id: preset_name
+    attributes:
+      label: Preset name (filename prefix)
+      description: >
+        Must match the filename prefix exactly. Only letters, digits, `_` and `-` allowed.
+        Example: `MouseSkull`
+      placeholder: MouseSkull
+    validations:
+      required: true
+
+  - type: input
+    id: description
+    attributes:
+      label: Short description
+      description: One-line description of what this preset is good for.
+      placeholder: Optimised for mouse cranial CT, 50 µm isotropic
+    validations:
+      required: false
+
+  - type: input
+    id: specimen
+    attributes:
+      label: Specimen / dataset (optional)
+      description: What specimen or scan type was this preset tuned for?
+      placeholder: Mus musculus skull, microCT
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Submission checklist
+      options:
+        - label: I have attached `<name>.vp.json` (exported from the SubmitVolumeRenderingPreset module)
+          required: true
+        - label: I have attached `<name>.png` (screenshot exported from the same module)
+          required: true
+        - label: Both filenames share the same prefix (e.g. `MouseSkull.vp.json` and `MouseSkull.png`)
+          required: true
+        - label: I agree to share this preset under the repository's open license
+          required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Attach your files here
+      description: >
+        Drag and drop `<name>.vp.json` and `<name>.png` into this box.
+        GitHub will upload them and insert download links automatically.
+      placeholder: "(drag files here)"
+    validations:
+      required: true
