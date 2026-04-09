@@ -1,6 +1,15 @@
 {
   "presets": [
     {
+      "prefix": "mouse",
+      "json_filename": "mouse.vp.json",
+      "png_filename": "mouse.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.png",
+      "author": null,
+      "description": null
+    },
+    {
       "prefix": "Murat",
       "json_filename": "Murat.vp.json",
       "png_filename": "Murat.png",
