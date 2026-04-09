@@ -7,6 +7,7 @@
       "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.vp.json",
       "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/mouse.png",
       "author": null,
+      "contributor": "muratmaga",
       "description": null
     },
     {
@@ -16,6 +17,7 @@
       "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat.vp.json",
       "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat.png",
       "author": null,
+      "contributor": "muratmaga",
       "description": null
     }
   ]
