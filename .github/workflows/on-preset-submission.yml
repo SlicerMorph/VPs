@@ -33,6 +33,9 @@ jobs:
               })
             } catch(e) { console.log('Label already set or error:', e.message) }
 
+      - name: Install dependencies
+        run: pip install boto3 -q
+
       - name: Validate and create PR
         env:
           ISSUE_BODY:   ${{ github.event.issue.body }}
@@ -41,4 +44,6 @@ jobs:
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          S3_ACCESS: ${{ secrets.ACCESS }}
+          S3_SECRET: ${{ secrets.SECRET }}
         run: python3 .github/scripts/process_submission.py

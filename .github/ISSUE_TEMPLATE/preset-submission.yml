@@ -9,29 +9,18 @@ body:
       value: |
         ## How to submit
 
-        1. Use the **SubmitVolumeRenderingPreset** module in SlicerMorph to export your preset files.
-        2. Fill in the fields below.
-        3. **Paste the contents** of `<name>.vp.json` into the JSON box below.
-        4. **Drag and drop** `<name>.png` into the Screenshot box so GitHub embeds it.
-        5. Click **Submit new issue**.
+        Use the **SubmitVolumeRenderingPreset** module in SlicerMorph:
+        1. Select your preset and click **1 – Export preset files**.
+        2. Click **2 – Upload and submit to GitHub**.
+        3. The module uploads the files automatically and opens this form pre-filled.
+        4. Click **Submit new issue** — that's it!
 
-        A maintainer will validate and merge your preset — you'll be credited by your GitHub username.
-
-  - type: input
-    id: preset_name
-    attributes:
-      label: Preset name (filename prefix)
-      description: >
-        Must match the filename prefix exactly. Only letters, digits, `_` and `-` allowed.
-        Example: `MouseSkull`
-      placeholder: MouseSkull
-    validations:
-      required: true
+        > **Note:** You need a free [GitHub account](https://github.com/signup) to submit.
 
   - type: input
     id: description
     attributes:
-      label: Short description
+      label: Short description (optional)
       description: One-line description of what this preset is good for.
       placeholder: Optimised for mouse cranial CT, 50 µm isotropic
     validations:
@@ -51,9 +40,7 @@ body:
     attributes:
       label: Submission checklist
       options:
-        - label: I have pasted the contents of `<name>.vp.json` in the JSON field below
-          required: true
-        - label: I have drag-dropped `<name>.png` into the Screenshot field below
+        - label: I submitted this via the SlicerMorph SubmitVolumeRenderingPreset module
           required: true
         - label: I agree to share this preset under the repository's open license
           required: true

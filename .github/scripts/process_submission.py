@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """
-Validate a preset submission from a GitHub issue body and, on success,
+Validate a preset submission from a GitHub issue and, on success,
 create a branch + PR automatically.
 
+Submission flow:
+  1. Slicer module uploads <uuid>.vp.json and <uuid>.png to the vp-staging S3 bucket.
+  2. It opens a GitHub issue with title "New preset: <name>" and body "staging: <uuid>".
+  3. This script downloads the files from S3, validates them, creates a PR, and
+     deletes the staging objects.
+
 Environment variables (set by the workflow):
-  ISSUE_BODY, ISSUE_NUMBER, ISSUE_TITLE, ISSUE_AUTHOR, GITHUB_REPOSITORY, GH_TOKEN
+  ISSUE_BODY, ISSUE_NUMBER, ISSUE_TITLE, ISSUE_AUTHOR, GITHUB_REPOSITORY,
+  GH_TOKEN, S3_ACCESS, S3_SECRET
 """
 import json
 import os
@@ -15,9 +22,14 @@ import sys
 import urllib.request
 import urllib.error
 
+import boto3
+from botocore.config import Config
 
 REPO  = os.environ.get("GITHUB_REPOSITORY", "SlicerMorph/VPs")
 TOKEN = os.environ.get("GH_TOKEN", "")
+
+S3_ENDPOINT = "https://js2.jetstream-cloud.org:8001"
+S3_BUCKET   = "vp-staging"
 
 
 # ---------------------------------------------------------------------------
@@ -56,46 +68,6 @@ def post_comment(issue_number, body):
         pass
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Suppress automatic redirect following so we can strip auth before CDN."""
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-def download_png(url, dest):
-    """Download a GitHub assets URL (user-attachments/assets) to dest.
-
-    GitHub redirects these to a CDN. The auth token must NOT be forwarded
-    to the CDN (S3 rejects it with 400), so we intercept the redirect and
-    make a second request without the auth header.
-    """
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "SlicerMorphVPs-bot/1",
-            "Authorization": f"token {TOKEN}",
-        },
-    )
-    opener = urllib.request.build_opener(_NoRedirect())
-    try:
-        with opener.open(req) as resp:
-            with open(dest, "wb") as fh:
-                fh.write(resp.read())
-            return
-    except urllib.error.HTTPError as e:
-        if e.code not in (301, 302, 303, 307, 308):
-            raise
-        cdn_url = e.headers.get("Location")
-
-    cdn_req = urllib.request.Request(
-        cdn_url,
-        headers={"User-Agent": "SlicerMorphVPs-bot/1"},
-    )
-    with urllib.request.urlopen(cdn_req) as resp:
-        with open(dest, "wb") as fh:
-            fh.write(resp.read())
-
-
 def run(*args):
     subprocess.run(args, check=True)
 
@@ -108,6 +80,17 @@ def file_exists_in_repo(path):
         return e.code != 404
 
 
+def _s3_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=S3_ENDPOINT,
+        aws_access_key_id=os.environ["S3_ACCESS"],
+        aws_secret_access_key=os.environ["S3_SECRET"],
+        config=Config(signature_version="s3v4"),
+        region_name="RegionOne",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -118,21 +101,15 @@ def main():
     issue_author = os.environ.get("ISSUE_AUTHOR", "unknown")
     issue_title  = os.environ.get("ISSUE_TITLE", "")
 
-    errors = []
-
     # ------------------------------------------------------------------
     # 1. Determine prefix from issue title "New preset: <name>"
     # ------------------------------------------------------------------
     title_m = re.search(r'New preset:\s*([A-Za-z0-9_-]+)', issue_title)
     if not title_m:
-        # fallback: try the body field
-        title_m = re.search(r'\*\*Preset name:\*\*\s*([A-Za-z0-9_-]+)', issue_body)
-
-    if not title_m:
         _fail(issue_number, [
             "Could not determine preset name. "
             "Make sure the issue title starts with `New preset: <name>` "
-            "and the name uses only letters, digits, `_`, and `-`."
+            "using only letters, digits, `_`, and `-`."
         ])
         return
 
@@ -140,79 +117,76 @@ def main():
     json_filename = f"{prefix}.vp.json"
 
     # ------------------------------------------------------------------
-    # 2. Parse JSON from fenced code block (render: json textarea)
+    # 2. Extract staging UUID from issue body
     # ------------------------------------------------------------------
-    json_block_m = re.search(r'```(?:json)?\s*\n([\s\S]+?)\n```', issue_body)
-
-    # ------------------------------------------------------------------
-    # 3. Parse PNG URL (embedded image from drag-drop)
-    # ------------------------------------------------------------------
-    png_m = re.search(
-        r'<img[^>]+src="(https://github\.com/user-attachments/assets/[^"]+)"',
+    staging_m = re.search(
+        r'staging:\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})',
         issue_body,
+        re.IGNORECASE,
     )
-    if not png_m:
-        png_m = re.search(
-            r'!\[[^\]]*\]\((https://github\.com/user-attachments/assets/[^)]+)\)',
-            issue_body,
-        )
-
-    if not json_block_m:
-        errors.append(
-            "No JSON code block found. "
-            "Please paste the contents of your `.vp.json` file into the **Preset JSON** field."
-        )
-    if not png_m:
-        errors.append(
-            "No PNG screenshot found. "
-            "Drag and drop your `<name>.png` file into the **Screenshot** field."
-        )
-
-    if errors:
-        _fail(issue_number, errors, hint="Edit this issue to add the missing content, then save.")
+    if not staging_m:
+        _fail(issue_number, [
+            "No staging upload ID found in this issue. "
+            "Please submit presets using the **SubmitVolumeRenderingPreset** module in SlicerMorph — "
+            "it handles the upload automatically."
+        ])
         return
 
-    json_text = json_block_m.group(1).strip()
-    png_url   = png_m.group(1)
+    uid      = staging_m.group(1)
+    json_key = f"{uid}.vp.json"
+    png_key  = f"{uid}.png"
+
+    # ------------------------------------------------------------------
+    # 3. Download files from S3 staging bucket
+    # ------------------------------------------------------------------
+    json_local = f"/tmp/{json_filename}"
+    png_local  = f"/tmp/{prefix}.png"
+    s3 = _s3_client()
+
+    try:
+        s3.download_file(S3_BUCKET, json_key, json_local)
+    except Exception as e:
+        _fail(issue_number, [
+            f"Could not retrieve preset JSON from staging storage: `{e}`. "
+            "The upload may have failed or the files may have expired — please try submitting again."
+        ])
+        return
+
+    try:
+        s3.download_file(S3_BUCKET, png_key, png_local)
+    except Exception as e:
+        _fail(issue_number, [
+            f"Could not retrieve preset screenshot from staging storage: `{e}`. "
+            "The upload may have failed or the files may have expired — please try submitting again."
+        ])
+        return
 
     # ------------------------------------------------------------------
     # 4. Validate JSON structure
     # ------------------------------------------------------------------
+    errors = []
     try:
-        data = json.loads(json_text)
+        with open(json_local) as fh:
+            data = json.load(fh)
         if not isinstance(data, dict) or "volumeProperties" not in data:
             errors.append(
-                "The pasted JSON is missing the required `volumeProperties` key. "
+                "The preset JSON is missing the required `volumeProperties` key. "
                 "Make sure you export using the SlicerMorph *SubmitVolumeRenderingPreset* module."
             )
     except json.JSONDecodeError as e:
-        errors.append(f"The pasted JSON is not valid: {e}")
+        errors.append(f"The preset JSON is not valid: {e}")
+
+    # ------------------------------------------------------------------
+    # 5. Validate PNG
+    # ------------------------------------------------------------------
+    with open(png_local, "rb") as fh:
+        header = fh.read(8)
+    if header != b'\x89PNG\r\n\x1a\n':
+        errors.append("The screenshot does not appear to be a valid PNG file.")
 
     if errors:
         _fail(issue_number, errors)
         return
-
-    json_local = f"/tmp/{json_filename}"
-    png_local  = f"/tmp/{prefix}.png"
-
-    with open(json_local, "w") as fh:
-        json.dump(data, fh, indent=2)
-
-    # ------------------------------------------------------------------
-    # 5. Download and validate PNG
-    # ------------------------------------------------------------------
-    try:
-        download_png(png_url, png_local)
-    except Exception as e:
-        errors.append(f"Could not download PNG screenshot: {e}")
-        _fail(issue_number, errors)
-        return
-
-    with open(png_local, "rb") as fh:
-        if fh.read(8) != b'\x89PNG\r\n\x1a\n':
-            errors.append("The attached image does not appear to be a valid PNG file.")
-            _fail(issue_number, errors)
-            return
 
     # ------------------------------------------------------------------
     # 6. Duplicate check
@@ -225,7 +199,16 @@ def main():
         return
 
     # ------------------------------------------------------------------
-    # 7. Create branch, commit, open PR
+    # 7. Delete staging objects (best-effort — don't block on failure)
+    # ------------------------------------------------------------------
+    try:
+        s3.delete_object(Bucket=S3_BUCKET, Key=json_key)
+        s3.delete_object(Bucket=S3_BUCKET, Key=png_key)
+    except Exception as e:
+        print(f"Warning: could not delete staging objects: {e}", file=sys.stderr)
+
+    # ------------------------------------------------------------------
+    # 8. Create branch, commit, open PR
     # ------------------------------------------------------------------
     branch = f"preset/add-{prefix.lower()}"
 
@@ -266,11 +249,9 @@ def main():
     print(f"PR created: {pr_url}")
 
 
-def _fail(issue_number, errors, hint=""):
+def _fail(issue_number, errors):
     msg = "## ❌ Preset validation failed\n\n"
     msg += "\n".join(f"- {e}" for e in errors)
-    if hint:
-        msg += f"\n\n**How to fix:** {hint}"
     post_comment(issue_number, msg)
     sys.exit(1)
 

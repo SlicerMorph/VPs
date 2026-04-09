@@ -1,0 +1,35 @@
+name: Refresh staging upload URLs
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install boto3
+        run: pip install boto3 -q
+
+      - name: Generate presigned PUT URLs
+        env:
+          S3_ACCESS: ${{ secrets.ACCESS }}
+          S3_SECRET: ${{ secrets.SECRET }}
+        run: python3 .github/scripts/generate_staging_urls.py
+
+      - name: Commit staging-urls.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add staging-urls.json
+          git diff --cached --quiet || git commit -m "chore: refresh staging upload URLs"
+          git push
