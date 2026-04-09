@@ -123,13 +123,16 @@ def scan_presets():
                     return None
                 return None
 
-        # Determine contributor: prefer PR author when available, else git author, else JSON author
+        # Determine contributor: prefer JSON author field (user-supplied via Slicer module),
+        # then fall back to PR author (GitHub username), then git author.
         sha = _commit_sha_for(json_path) or _commit_sha_for(png_path)
         pr_author = _pr_author_for_commit(sha)
-        if pr_author:
+        if author:
+            contributor = author
+        elif pr_author:
             contributor = pr_author
         else:
-            contributor = _git_author_for(json_path) or _git_author_for(png_path) or author
+            contributor = _git_author_for(json_path) or _git_author_for(png_path)
         entry = {
             'prefix': p,
             'json_filename': jname,
