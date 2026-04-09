@@ -9,6 +9,7 @@ SlicerMorph/VPs and main.
 import os
 import json
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +49,7 @@ def scan_presets():
         jname = js[p]
         pname = pngs[p]
         json_path = PRESETS / jname
+        png_path = PRESETS / pname
         author = None
         description = None
         try:
@@ -58,6 +60,68 @@ def scan_presets():
             description = data.get('description') if isinstance(data, dict) else None
         except Exception:
             pass
+        # determine contributor from git history / PR metadata (best-effort)
+        contributor = None
+
+        def _git_author_for(path):
+            try:
+                cmd = ['git', '-C', str(ROOT), 'log', '-1', '--pretty=format:%an%x01%ae', '--', str(path)]
+                out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
+                if not out:
+                    return None
+                name, email = out.split('\x01', 1)
+                # Try to extract GitHub username from users.noreply.github.com emails
+                m = re.search(r"(?:\d+\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com", email)
+                if m:
+                    return '@' + m.group(1)
+                # fallback to email localpart or name
+                if '@' in email:
+                    return email.split('@', 1)[0]
+                return name
+            except Exception:
+                return None
+
+        def _commit_sha_for(path):
+            try:
+                cmd = ['git', '-C', str(ROOT), 'log', '-1', '--pretty=format:%H', '--', str(path)]
+                out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
+                return out or None
+            except Exception:
+                return None
+
+        def _pr_author_for_commit(sha):
+            try:
+                if not sha:
+                    return None
+                repo = GITHUB_REPOSITORY
+                token = os.environ.get('GITHUB_TOKEN')
+                url = f'https://api.github.com/repos/{repo}/commits/{sha}/pulls'
+                headers = {
+                    'Accept': 'application/vnd.github.groot-preview+json'
+                }
+                if token:
+                    headers['Authorization'] = f'token {token}'
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    body = resp.read()
+                    data = json.loads(body)
+                    if isinstance(data, list) and len(data) > 0:
+                        pr = data[0]
+                        user = pr.get('user') or {}
+                        login = user.get('login')
+                        if login:
+                            return '@' + login
+                return None
+            except Exception:
+                return None
+
+        # Determine contributor: prefer PR author when available, else git author, else JSON author
+        sha = _commit_sha_for(json_path) or _commit_sha_for(png_path)
+        pr_author = _pr_author_for_commit(sha)
+        if pr_author:
+            contributor = pr_author
+        else:
+            contributor = _git_author_for(json_path) or _git_author_for(png_path) or author
         entry = {
             'prefix': p,
             'json_filename': jname,
@@ -65,6 +129,7 @@ def scan_presets():
             'json_raw_url': f'{RAW_BASE}/{jname}',
             'png_raw_url': f'{RAW_BASE}/{pname}',
             'author': author,
+            'contributor': contributor,
             'description': description,
         }
         entries.append(entry)
@@ -89,12 +154,19 @@ def render_readme(entries):
         jsonurl = e['json_raw_url']
         title = e['prefix']
         author = e.get('author') or ''
+        contributor = e.get('contributor') or ''
         desc = e.get('description') or ''
         md += f"<td align=\"center\" style=\"padding:8px\">"
         md += f"<a href=\"{thumb}\" target=\"_blank\"><img src=\"{thumb}\" alt=\"{title}\" width=200></a><br/>"
         md += f"**{title}**<br/>"
-        if author:
-            md += f"{author}<br/>"
+        # Prefer showing the Git contributor (GitHub username if available), fall back to JSON author
+        shown = contributor or author
+        if shown:
+            if isinstance(shown, str) and shown.startswith('@'):
+                user = shown.lstrip('@')
+                md += f"[{shown}](https://github.com/{user})<br/>"
+            else:
+                md += f"{shown}<br/>"
         md += f"<a href=\"{jsonurl}\">Download JSON</a>"
         md += f"</td>"
     md += '</tr></table>\n'
