@@ -113,6 +113,14 @@ def scan_presets():
                             return '@' + login
                 return None
             except Exception:
+                # fallback: try using `gh api` (if gh CLI is authenticated)
+                try:
+                    cmd = ['gh', 'api', f'repos/{GITHUB_REPOSITORY}/commits/{sha}/pulls', '--jq', '.[0].user.login']
+                    out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
+                    if out:
+                        return '@' + out
+                except Exception:
+                    return None
                 return None
 
         # Determine contributor: prefer PR author when available, else git author, else JSON author
@@ -158,15 +166,17 @@ def render_readme(entries):
         desc = e.get('description') or ''
         md += f"<td align=\"center\" style=\"padding:8px\">"
         md += f"<a href=\"{thumb}\" target=\"_blank\"><img src=\"{thumb}\" alt=\"{title}\" width=200></a><br/>"
-        md += f"**{title}**<br/>"
+        md += f"<strong>{title}</strong><br/>"
         # Prefer showing the Git contributor (GitHub username if available), fall back to JSON author
         shown = contributor or author
         if shown:
             if isinstance(shown, str) and shown.startswith('@'):
                 user = shown.lstrip('@')
-                md += f"[{shown}](https://github.com/{user})<br/>"
+                md += f"<a href=\"https://github.com/{user}\">{shown}</a><br/>"
             else:
-                md += f"{shown}<br/>"
+                # escape HTML-sensitive characters in plain text
+                safe = str(shown).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                md += f"{safe}<br/>"
         md += f"<a href=\"{jsonurl}\">Download JSON</a>"
         md += f"</td>"
     md += '</tr></table>\n'
