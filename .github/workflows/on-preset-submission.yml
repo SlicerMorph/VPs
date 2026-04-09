@@ -1,4 +1,4 @@
-name: Validate preset submission
+name: Process preset submission
 
 on:
   issues:
@@ -6,17 +6,19 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
-  validate:
-    if: >
-      startsWith(github.event.issue.title, 'New preset:') ||
-      contains(github.event.issue.body, 'SubmitVolumeRenderingPreset module')
+  process:
+    if: startsWith(github.event.issue.title, 'New preset:')
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Add preset-submission label
         uses: actions/github-script@v7
@@ -29,14 +31,13 @@ jobs:
                 issue_number: context.issue.number,
                 labels: ['preset-submission']
               })
-            } catch(e) {
-              console.log('Could not add label:', e.message)
-            }
+            } catch(e) { console.log('Label already set or error:', e.message) }
 
-      - name: Validate submission
+      - name: Validate and create PR
         env:
-          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_BODY:   ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 .github/scripts/validate_submission.py
+        run: python3 .github/scripts/process_submission.py
