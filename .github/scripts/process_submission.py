@@ -214,7 +214,7 @@ def main():
 
     run("git", "config", "user.name",  "github-actions[bot]")
     run("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
-    run("git", "checkout", "-b", branch)
+    run("git", "checkout", "-B", branch)  # -B resets branch if it already exists
 
     shutil.copy(json_local, f"presets/{json_filename}")
     shutil.copy(png_local,  f"presets/{prefix}.png")
@@ -223,17 +223,26 @@ def main():
     run("git", "commit", "-m", f"feat: add {prefix} preset (closes #{issue_number})")
     run("git", "push", "origin", branch)
 
-    pr = _api("POST", "pulls", data={
-        "title": f"Add {prefix} preset",
-        "body": (
-            f"Adds the **{prefix}** volume rendering preset.\n\n"
-            f"Submitted by @{issue_author} via issue #{issue_number}.\n\n"
-            f"Closes #{issue_number}"
-        ),
-        "head": branch,
-        "base": "main",
-    })
-    pr_url = pr["html_url"]
+    try:
+        pr = _api("POST", "pulls", data={
+            "title": f"Add {prefix} preset",
+            "body": (
+                f"Adds the **{prefix}** volume rendering preset.\n\n"
+                f"Submitted by @{issue_author} via issue #{issue_number}.\n\n"
+                f"Closes #{issue_number}"
+            ),
+            "head": branch,
+            "base": "main",
+        })
+        pr_url = pr["html_url"]
+    except urllib.error.HTTPError as e:
+        # PR may already exist (e.g. re-run after partial failure)
+        body = e.read().decode()
+        if e.code == 422 and "already exists" in body:
+            prs = _api("GET", f"pulls?head=SlicerMorph:{branch}&state=open")
+            pr_url = prs[0]["html_url"] if prs else f"https://github.com/{REPO}/pulls"
+        else:
+            raise
 
     post_comment(
         issue_number,
