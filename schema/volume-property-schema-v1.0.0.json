@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Slicer Volume Property (minimal vendored schema)",
+  "type": "object",
+  "properties": {
+    "@schema": {"type": "string"},
+    "volumeProperties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "effectiveRange": {"type": "array", "items": {"type":"number"}, "minItems":2, "maxItems":2},
+          "isoSurfaceValues": {"type":"array", "items": {"type":"number"}},
+          "independentComponents": {"type":"boolean"},
+          "interpolationType": {"type":"string"},
+          "useClippedVoxelIntensity": {"type":"boolean"},
+          "clippedVoxelIntensity": {"type":"number"},
+          "scatteringAnisotropy": {"type":"number"},
+          "components": {"type":"array"}
+        },
+        "required": ["components"]
+      }
+    }
+  },
+  "required": ["volumeProperties"]
+}

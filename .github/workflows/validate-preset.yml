@@ -1,0 +1,36 @@
+name: Validate preset PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jsonschema Pillow
+
+      - name: Run validator
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python3 tools/validate.py --pr
+
+      - name: Comment on PR (success)
+        if: success()
+        run: |
+          echo "Validation passed. If you want to download the JSON, use the Raw link from the file in this PR or after merge from the `presets/` directory." 
