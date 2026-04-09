@@ -20,7 +20,7 @@ SECRET = os.environ["S3_SECRET"]
 
 ENDPOINT   = "https://js2.jetstream-cloud.org:8001"
 BUCKET     = "vp-staging"
-EXPIRES_IN = 7200  # 2 hours — cron runs hourly, so URLs are always fresh
+EXPIRES_IN = 1200  # 20 minutes — cron runs every 15 min, so URLs are always fresh
 
 s3 = boto3.client(
     "s3",

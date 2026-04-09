@@ -2,7 +2,7 @@ name: Refresh staging upload URLs
 
 on:
   schedule:
-    - cron: '0 * * * *'   # every hour
+    - cron: '*/15 * * * *'   # every 15 minutes
   workflow_dispatch:
 
 permissions:
