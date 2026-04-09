@@ -21,6 +21,16 @@
       "description": null
     },
     {
+      "prefix": "Mouse22",
+      "json_filename": "Mouse22.vp.json",
+      "png_filename": "Mouse22.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Mouse22.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Mouse22.png",
+      "author": null,
+      "contributor": "41898282+github-actions[bot]",
+      "description": "another try"
+    },
+    {
       "prefix": "Murat",
       "json_filename": "Murat.vp.json",
       "png_filename": "Murat.png",
