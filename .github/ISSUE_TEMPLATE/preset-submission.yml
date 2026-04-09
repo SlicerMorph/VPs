@@ -11,8 +11,9 @@ body:
 
         1. Use the **SubmitVolumeRenderingPreset** module in SlicerMorph to export your preset files.
         2. Fill in the fields below.
-        3. **Drag and drop both files** (`<name>.vp.json` and `<name>.png`) into the text area at the bottom of this form.
-        4. Click **Submit new issue**.
+        3. **Paste the contents** of `<name>.vp.json` into the JSON box below.
+        4. **Drag and drop** `<name>.png` into the Screenshot box so GitHub embeds it.
+        5. Click **Submit new issue**.
 
         A maintainer will validate and merge your preset — you'll be credited by your GitHub username.
 
@@ -50,22 +51,30 @@ body:
     attributes:
       label: Submission checklist
       options:
-        - label: I have attached `<name>.vp.json` (exported from the SubmitVolumeRenderingPreset module)
+        - label: I have pasted the contents of `<name>.vp.json` in the JSON field below
           required: true
-        - label: I have attached `<name>.png` (screenshot exported from the same module)
-          required: true
-        - label: Both filenames share the same prefix (e.g. `MouseSkull.vp.json` and `MouseSkull.png`)
+        - label: I have drag-dropped `<name>.png` into the Screenshot field below
           required: true
         - label: I agree to share this preset under the repository's open license
           required: true
 
   - type: textarea
-    id: files
+    id: preset_json
     attributes:
-      label: Attach your files here
-      description: >
-        Drag and drop `<name>.vp.json` and `<name>.png` into this box.
-        GitHub will upload them and insert download links automatically.
-      placeholder: "(drag files here)"
+      label: Preset JSON
+      description: >-
+        Open `<name>.vp.json` in a text editor, select all, and paste here.
+        The automation needs to read the content directly.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (PNG)
+      description: >-
+        Drag and drop `<name>.png` into this box. GitHub will embed it as an image.
+      placeholder: "(drag PNG here)"
     validations:
       required: true

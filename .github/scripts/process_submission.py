@@ -4,7 +4,7 @@ Validate a preset submission from a GitHub issue body and, on success,
 create a branch + PR automatically.
 
 Environment variables (set by the workflow):
-  ISSUE_BODY, ISSUE_NUMBER, ISSUE_AUTHOR, GITHUB_REPOSITORY, GH_TOKEN
+  ISSUE_BODY, ISSUE_NUMBER, ISSUE_TITLE, ISSUE_AUTHOR, GITHUB_REPOSITORY, GH_TOKEN
 """
 import json
 import os
@@ -16,7 +16,7 @@ import urllib.request
 import urllib.error
 
 
-REPO = os.environ.get("GITHUB_REPOSITORY", "SlicerMorph/VPs")
+REPO  = os.environ.get("GITHUB_REPOSITORY", "SlicerMorph/VPs")
 TOKEN = os.environ.get("GH_TOKEN", "")
 
 
@@ -57,12 +57,18 @@ def post_comment(issue_number, body):
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Suppress automatic redirect following so we can strip auth before CDN."""
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None  # suppress automatic redirect following
+        return None
 
 
-def download(url, dest):
-    # Phase 1: hit the GitHub attachment URL with auth to get the CDN redirect
+def download_png(url, dest):
+    """Download a GitHub assets URL (user-attachments/assets) to dest.
+
+    GitHub redirects these to a CDN. The auth token must NOT be forwarded
+    to the CDN (S3 rejects it with 400), so we intercept the redirect and
+    make a second request without the auth header.
+    """
     req = urllib.request.Request(
         url,
         headers={
@@ -73,7 +79,6 @@ def download(url, dest):
     opener = urllib.request.build_opener(_NoRedirect())
     try:
         with opener.open(req) as resp:
-            # No redirect — serve directly
             with open(dest, "wb") as fh:
                 fh.write(resp.read())
             return
@@ -82,7 +87,6 @@ def download(url, dest):
             raise
         cdn_url = e.headers.get("Location")
 
-    # Phase 2: fetch from CDN without auth (S3 rejects GitHub tokens)
     cdn_req = urllib.request.Request(
         cdn_url,
         headers={"User-Agent": "SlicerMorphVPs-bot/1"},
@@ -96,14 +100,12 @@ def run(*args):
     subprocess.run(args, check=True)
 
 
-def duplicate_exists(json_filename):
+def file_exists_in_repo(path):
     try:
-        _api("GET", f"contents/presets/{json_filename}")
-        return True  # 200 → file exists
+        _api("GET", f"contents/{path}")
+        return True
     except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return False
-        return False  # unexpected error — skip check
+        return e.code != 404
 
 
 # ---------------------------------------------------------------------------
@@ -114,118 +116,116 @@ def main():
     issue_body   = os.environ["ISSUE_BODY"]
     issue_number = os.environ["ISSUE_NUMBER"]
     issue_author = os.environ.get("ISSUE_AUTHOR", "unknown")
+    issue_title  = os.environ.get("ISSUE_TITLE", "")
 
     errors = []
 
     # ------------------------------------------------------------------
-    # 1. Parse attachment URLs from issue body
+    # 1. Determine prefix from issue title "New preset: <name>"
     # ------------------------------------------------------------------
-    # JSON: markdown link  [name.vp.json](https://github.com/user-attachments/files/...)
-    json_match = re.search(
-        r'\[([A-Za-z0-9_\-. ]+\.(?:vp\.)?json)\]'
-        r'\((https://github\.com/user-attachments/files/[^)]+)\)',
-        issue_body,
-    )
-    # PNG: HTML img tag (GitHub renders drag-dropped images this way)
-    png_match = re.search(
+    title_m = re.search(r'New preset:\s*([A-Za-z0-9_-]+)', issue_title)
+    if not title_m:
+        # fallback: try the body field
+        title_m = re.search(r'\*\*Preset name:\*\*\s*([A-Za-z0-9_-]+)', issue_body)
+
+    if not title_m:
+        _fail(issue_number, [
+            "Could not determine preset name. "
+            "Make sure the issue title starts with `New preset: <name>` "
+            "and the name uses only letters, digits, `_`, and `-`."
+        ])
+        return
+
+    prefix        = title_m.group(1)
+    json_filename = f"{prefix}.vp.json"
+
+    # ------------------------------------------------------------------
+    # 2. Parse JSON from fenced code block (render: json textarea)
+    # ------------------------------------------------------------------
+    json_block_m = re.search(r'```(?:json)?\s*\n([\s\S]+?)\n```', issue_body)
+
+    # ------------------------------------------------------------------
+    # 3. Parse PNG URL (embedded image from drag-drop)
+    # ------------------------------------------------------------------
+    png_m = re.search(
         r'<img[^>]+src="(https://github\.com/user-attachments/assets/[^"]+)"',
         issue_body,
     )
-    # Fallback: markdown image syntax
-    if not png_match:
-        png_match = re.search(
+    if not png_m:
+        png_m = re.search(
             r'!\[[^\]]*\]\((https://github\.com/user-attachments/assets/[^)]+)\)',
             issue_body,
         )
 
-    if not json_match:
+    if not json_block_m:
         errors.append(
-            "No `.vp.json` file attachment found. "
-            "Drag and drop the JSON file exported from SlicerMorph into the issue body."
+            "No JSON code block found. "
+            "Please paste the contents of your `.vp.json` file into the **Preset JSON** field."
         )
-    if not png_match:
+    if not png_m:
         errors.append(
-            "No PNG image attachment found. "
-            "Drag and drop the PNG screenshot exported from SlicerMorph into the issue body."
+            "No PNG screenshot found. "
+            "Drag and drop your `<name>.png` file into the **Screenshot** field."
         )
 
     if errors:
-        _fail(issue_number, errors, hint="Edit this issue and attach both files, then save.")
+        _fail(issue_number, errors, hint="Edit this issue to add the missing content, then save.")
         return
 
-    json_filename = json_match.group(1).strip()
-    json_url      = json_match.group(2)
-    png_url       = png_match.group(1)
-
-    # ------------------------------------------------------------------
-    # 2. Filename / prefix validation
-    # ------------------------------------------------------------------
-    prefix_m = re.match(r'^([A-Za-z0-9_-]+)(?:\.vp)?\.json$', json_filename)
-    if not prefix_m:
-        errors.append(
-            f"`{json_filename}` does not follow the required naming pattern "
-            "`<name>.vp.json`. Allowed characters: A-Z a-z 0-9 _ -"
-        )
-        _fail(issue_number, errors)
-        return
-
-    prefix = prefix_m.group(1)
-
-    # ------------------------------------------------------------------
-    # 3. Download files
-    # ------------------------------------------------------------------
-    json_local = f"/tmp/{json_filename}"
-    png_local  = f"/tmp/{prefix}.png"
-
-    for url, dest, label in [(json_url, json_local, "JSON"), (png_url, png_local, "PNG")]:
-        try:
-            download(url, dest)
-        except Exception as e:
-            errors.append(f"Could not download {label} file: {e}")
-
-    if errors:
-        _fail(issue_number, errors)
-        return
+    json_text = json_block_m.group(1).strip()
+    png_url   = png_m.group(1)
 
     # ------------------------------------------------------------------
     # 4. Validate JSON structure
     # ------------------------------------------------------------------
     try:
-        with open(json_local) as fh:
-            data = json.load(fh)
+        data = json.loads(json_text)
         if not isinstance(data, dict) or "volumeProperties" not in data:
             errors.append(
-                "JSON file is missing the required `volumeProperties` key. "
+                "The pasted JSON is missing the required `volumeProperties` key. "
                 "Make sure you export using the SlicerMorph *SubmitVolumeRenderingPreset* module."
             )
     except json.JSONDecodeError as e:
-        errors.append(f"JSON file is not valid JSON: {e}")
+        errors.append(f"The pasted JSON is not valid: {e}")
+
+    if errors:
+        _fail(issue_number, errors)
+        return
+
+    json_local = f"/tmp/{json_filename}"
+    png_local  = f"/tmp/{prefix}.png"
+
+    with open(json_local, "w") as fh:
+        json.dump(data, fh, indent=2)
 
     # ------------------------------------------------------------------
-    # 5. Validate PNG magic bytes
+    # 5. Download and validate PNG
     # ------------------------------------------------------------------
     try:
-        with open(png_local, "rb") as fh:
-            if fh.read(8) != b'\x89PNG\r\n\x1a\n':
-                errors.append("Attached image does not appear to be a valid PNG file.")
+        download_png(png_url, png_local)
     except Exception as e:
-        errors.append(f"Could not read PNG file: {e}")
+        errors.append(f"Could not download PNG screenshot: {e}")
+        _fail(issue_number, errors)
+        return
+
+    with open(png_local, "rb") as fh:
+        if fh.read(8) != b'\x89PNG\r\n\x1a\n':
+            errors.append("The attached image does not appear to be a valid PNG file.")
+            _fail(issue_number, errors)
+            return
 
     # ------------------------------------------------------------------
     # 6. Duplicate check
     # ------------------------------------------------------------------
-    if duplicate_exists(json_filename):
-        errors.append(
+    if file_exists_in_repo(f"presets/{json_filename}"):
+        _fail(issue_number, [
             f"A preset named `{prefix}` already exists in the repository. "
             "Please choose a different name."
-        )
-
-    if errors:
-        _fail(issue_number, errors, hint="Please fix the issues above and edit this issue to re-trigger validation.")
+        ])
         return
 
     # ------------------------------------------------------------------
-    # 7. All good — create branch, commit, open PR
+    # 7. Create branch, commit, open PR
     # ------------------------------------------------------------------
     branch = f"preset/add-{prefix.lower()}"
 
