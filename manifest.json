@@ -1,6 +1,16 @@
 {
   "presets": [
     {
+      "prefix": "Blah3",
+      "json_filename": "Blah3.vp.json",
+      "png_filename": "Blah3.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Blah3.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Blah3.png",
+      "author": "murat's alter ego",
+      "contributor": "murat's alter ego",
+      "description": "demo to steve"
+    },
+    {
       "prefix": "mouse",
       "json_filename": "mouse.vp.json",
       "png_filename": "mouse.png",
@@ -27,7 +37,7 @@
       "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat2.vp.json",
       "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Murat2.png",
       "author": "murat's alter ego",
-      "contributor": "41898282+github-actions[bot]",
+      "contributor": "murat's alter ego",
       "description": "staging trial2"
     }
   ]
