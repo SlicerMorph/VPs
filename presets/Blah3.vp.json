@@ -1,0 +1,416 @@
+{
+    "@schema": "https://raw.githubusercontent.com/slicer/slicer/main/Modules/Loadable/VolumeRendering/Resources/Schema/volume-property-schema-v1.0.0.json#",
+    "volumeProperties": [
+        {
+            "effectiveRange": [
+                -1046.0,
+                2036.0
+            ],
+            "isoSurfaceValues": [
+                0.0
+            ],
+            "independentComponents": true,
+            "interpolationType": "linear",
+            "useClippedVoxelIntensity": false,
+            "clippedVoxelIntensity": -10000000000.0,
+            "scatteringAnisotropy": 0.0,
+            "components": [
+                {
+                    "componentWeight": 1.0,
+                    "shade": true,
+                    "lighting": {
+                        "diffuse": 0.6,
+                        "ambient": 0.3,
+                        "specular": 0.5,
+                        "specularPower": 40.0
+                    },
+                    "disableGradientOpacity": false,
+                    "scalarOpacityUnitDistance": 1.0,
+                    "rgbTransferFunction": {
+                        "type": "colorTransferFunction",
+                        "points": [
+                            {
+                                "x": -1046.0,
+                                "color": [
+                                    0.0,
+                                    1.0,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -1026.0,
+                                "color": [
+                                    0.0,
+                                    1.0,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -976.6904761904761,
+                                "color": [
+                                    0.0,
+                                    0.9529411764705882,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -878.0714285714286,
+                                "color": [
+                                    0.0,
+                                    0.8627450980392157,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -779.452380952381,
+                                "color": [
+                                    0.0,
+                                    0.7725490196078432,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -680.8333333333333,
+                                "color": [
+                                    0.0,
+                                    0.6823529411764706,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -582.2142857142858,
+                                "color": [
+                                    0.0,
+                                    0.592156862745098,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -532.9047619047619,
+                                "color": [
+                                    0.0,
+                                    0.5450980392156862,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -434.2857142857142,
+                                "color": [
+                                    0.0,
+                                    0.4549019607843137,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -335.66666666666663,
+                                "color": [
+                                    0.0,
+                                    0.36470588235294116,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -237.04761904761904,
+                                "color": [
+                                    0.0,
+                                    0.27450980392156865,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -138.42857142857144,
+                                "color": [
+                                    0.0,
+                                    0.1803921568627451,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -39.80952380952385,
+                                "color": [
+                                    0.0,
+                                    0.09019607843137255,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 9.5,
+                                "color": [
+                                    0.0,
+                                    0.047058823529411764,
+                                    1.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 108.1190476190477,
+                                "color": [
+                                    1.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 206.73809523809518,
+                                "color": [
+                                    1.0,
+                                    0.10588235294117647,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 305.3571428571429,
+                                "color": [
+                                    1.0,
+                                    0.21176470588235294,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 403.9761904761906,
+                                "color": [
+                                    1.0,
+                                    0.3176470588235294,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 502.5952380952381,
+                                "color": [
+                                    1.0,
+                                    0.4196078431372549,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 551.9047619047619,
+                                "color": [
+                                    1.0,
+                                    0.4745098039215686,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 650.5238095238096,
+                                "color": [
+                                    1.0,
+                                    0.5803921568627451,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 749.1428571428571,
+                                "color": [
+                                    1.0,
+                                    0.6823529411764706,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 847.7619047619048,
+                                "color": [
+                                    1.0,
+                                    0.788235294117647,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 946.3809523809523,
+                                "color": [
+                                    1.0,
+                                    0.8941176470588236,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 1045.0,
+                                "color": [
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 1045.0000000000002,
+                                "color": [
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2036.0,
+                                "color": [
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    },
+                    "scalarOpacity": {
+                        "type": "piecewiseFunction",
+                        "points": [
+                            {
+                                "x": -1046.0,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -836.0,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -258.8335876464844,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": -69.09314727783203,
+                                "value": 0.028985507786273956,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 377.05328369140625,
+                                "value": 0.17391304671764374,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 571.9218139648438,
+                                "value": 0.49275362491607666,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 1541.136474609375,
+                                "value": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2036.0,
+                                "value": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2036.0000000000002,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2036.0000000000005,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    },
+                    "gradientOpacity": {
+                        "type": "piecewiseFunction",
+                        "points": [
+                            {
+                                "x": -1046.0,
+                                "value": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 0.0,
+                                "value": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 67.52467346191406,
+                                "value": 0.04477611929178238,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 217.2532958984375,
+                                "value": 0.04477611929178238,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 236.54605102539062,
+                                "value": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2036.0,
+                                "value": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "demo to steve",
+    "author": "murat's alter ego"
+}
