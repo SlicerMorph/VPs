@@ -189,7 +189,7 @@ def main():
         return
 
     # ------------------------------------------------------------------
-    # 6. Duplicate check
+    # 7. Duplicate check
     # ------------------------------------------------------------------
     if file_exists_in_repo(f"presets/{json_filename}"):
         _fail(issue_number, [
@@ -197,15 +197,6 @@ def main():
             "Please choose a different name."
         ])
         return
-
-    # ------------------------------------------------------------------
-    # 7. Delete staging objects (best-effort — don't block on failure)
-    # ------------------------------------------------------------------
-    try:
-        s3.delete_object(Bucket=S3_BUCKET, Key=json_key)
-        s3.delete_object(Bucket=S3_BUCKET, Key=png_key)
-    except Exception as e:
-        print(f"Warning: could not delete staging objects: {e}", file=sys.stderr)
 
     # ------------------------------------------------------------------
     # 8. Create branch, commit, open PR
@@ -243,6 +234,15 @@ def main():
             pr_url = prs[0]["html_url"] if prs else f"https://github.com/{REPO}/pulls"
         else:
             raise
+
+    # ------------------------------------------------------------------
+    # 9. Delete staging objects now that PR is open (best-effort)
+    # ------------------------------------------------------------------
+    try:
+        s3.delete_object(Bucket=S3_BUCKET, Key=json_key)
+        s3.delete_object(Bucket=S3_BUCKET, Key=png_key)
+    except Exception as e:
+        print(f"Warning: could not delete staging objects: {e}", file=sys.stderr)
 
     post_comment(
         issue_number,
