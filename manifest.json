@@ -49,6 +49,16 @@
       "author": "murat's alter ego",
       "contributor": "murat's alter ego",
       "description": "staging trial2"
+    },
+    {
+      "prefix": "MuratTest",
+      "json_filename": "MuratTest.vp.json",
+      "png_filename": "MuratTest.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/MuratTest.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/MuratTest.png",
+      "author": "muratmaga",
+      "contributor": "muratmaga",
+      "description": "MuratTest"
     }
   ]
 }
