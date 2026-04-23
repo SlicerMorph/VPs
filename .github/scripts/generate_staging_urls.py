@@ -20,7 +20,9 @@ SECRET = os.environ["S3_SECRET"]
 
 ENDPOINT   = "https://js2.jetstream-cloud.org:8001"
 BUCKET     = "vp-staging"
-EXPIRES_IN = 1200  # 20 minutes — cron runs every 15 min, so URLs are always fresh
+# GitHub's scheduled workflows are often delayed significantly, so keep
+# presigned URLs valid long enough to survive missed 10-minute cron runs.
+EXPIRES_IN = 7200  # 2 hours
 
 s3 = boto3.client(
     "s3",
