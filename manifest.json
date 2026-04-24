@@ -11,6 +11,16 @@
       "description": "demo to steve"
     },
     {
+      "prefix": "MagaLabVR",
+      "json_filename": "MagaLabVR.vp.json",
+      "png_filename": "MagaLabVR.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/MagaLabVR.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/MagaLabVR.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "Useful 8bit microCT bone"
+    },
+    {
       "prefix": "mouse",
       "json_filename": "mouse.vp.json",
       "png_filename": "mouse.png",
