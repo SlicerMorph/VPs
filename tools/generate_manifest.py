@@ -10,6 +10,7 @@ import os
 import json
 import re
 import subprocess
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -173,13 +174,19 @@ def render_readme(entries):
         # Prefer showing the Git contributor (GitHub username if available), fall back to JSON author
         shown = contributor or author
         if shown:
-            if isinstance(shown, str) and shown.startswith('@'):
-                user = shown.lstrip('@')
-                md += f"<a href=\"https://github.com/{user}\">{shown}</a><br/>"
+            shown_str = str(shown)
+            handle = shown_str[1:] if shown_str.startswith('@') else shown_str
+            # GitHub usernames: alphanumeric or hyphens, 1-39 chars, cannot start/end with hyphen.
+            # Link only when the contributor string looks like a real GitHub login.
+            if re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?', handle):
+                md += f"<a href=\"https://github.com/{handle}\">{shown_str}</a><br/>"
             else:
                 # escape HTML-sensitive characters in plain text
-                safe = str(shown).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                safe = shown_str.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
                 md += f"{safe}<br/>"
+        if desc:
+            safe_desc = str(desc).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            md += f"<em>{safe_desc}</em><br/>"
         md += f"<a href=\"{jsonurl}\">Download JSON</a>"
         md += f"</td>"
     md += '</tr></table>\n'
