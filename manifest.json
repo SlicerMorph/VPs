@@ -1,3 +1,14 @@
 {
-  "presets": []
+  "presets": [
+    {
+      "prefix": "Bat-8bit",
+      "json_filename": "Bat-8bit.vp.json",
+      "png_filename": "Bat-8bit.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Bat-8bit.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Bat-8bit.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "off white dry skull"
+    }
+  ]
 }
