@@ -1,0 +1,264 @@
+{
+    "@schema": "https://raw.githubusercontent.com/slicer/slicer/main/Modules/Loadable/VolumeRendering/Resources/Schema/volume-property-schema-v1.0.0.json#",
+    "volumeProperties": [
+        {
+            "effectiveRange": [
+                0.0,
+                136.39535522460938
+            ],
+            "isoSurfaceValues": [
+                0.0
+            ],
+            "independentComponents": true,
+            "interpolationType": "linear",
+            "useClippedVoxelIntensity": false,
+            "clippedVoxelIntensity": -10000000000.0,
+            "scatteringAnisotropy": 0.0,
+            "components": [
+                {
+                    "componentWeight": 1.0,
+                    "shade": true,
+                    "lighting": {
+                        "diffuse": 0.9,
+                        "ambient": 0.1,
+                        "specular": 0.2,
+                        "specularPower": 10.0
+                    },
+                    "disableGradientOpacity": false,
+                    "scalarOpacityUnitDistance": 1.0,
+                    "rgbTransferFunction": {
+                        "type": "colorTransferFunction",
+                        "points": [
+                            {
+                                "x": 0.0,
+                                "color": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072014e-308,
+                                "color": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.225073858507202e-308,
+                                "color": [
+                                    0.043137254901960784,
+                                    0.043137254901960784,
+                                    0.043137254901960784
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072024e-308,
+                                "color": [
+                                    0.08627450980392157,
+                                    0.08627450980392157,
+                                    0.08627450980392157
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.225073858507203e-308,
+                                "color": [
+                                    0.12941176470588237,
+                                    0.12941176470588237,
+                                    0.12941176470588237
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072034e-308,
+                                "color": [
+                                    0.17254901960784313,
+                                    0.17254901960784313,
+                                    0.17254901960784313
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.225073858507204e-308,
+                                "color": [
+                                    0.21568627450980393,
+                                    0.21568627450980393,
+                                    0.21568627450980393
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072043e-308,
+                                "color": [
+                                    0.25882352941176473,
+                                    0.25882352941176473,
+                                    0.25882352941176473
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.225073858507205e-308,
+                                "color": [
+                                    0.30196078431372547,
+                                    0.30196078431372547,
+                                    0.30196078431372547
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072053e-308,
+                                "color": [
+                                    0.34509803921568627,
+                                    0.34509803921568627,
+                                    0.34509803921568627
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.225073858507206e-308,
+                                "color": [
+                                    0.38823529411764707,
+                                    0.38823529411764707,
+                                    0.38823529411764707
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 2.2250738585072063e-308,
+                                "color": [
+                                    0.43137254901960786,
+                                    0.43137254901960786,
+                                    0.43137254901960786
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 3.5843137254901976,
+                                "color": [
+                                    0.4745098039215686,
+                                    0.4745098039215686,
+                                    0.4745098039215686
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 57.819766998291016,
+                                "color": [
+                                    0.9333333333333333,
+                                    0.9333333333333333,
+                                    0.9333333333333333
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 112.7689208984375,
+                                "color": [
+                                    0.9563941283505872,
+                                    0.9428289548110261,
+                                    0.7596991120269522
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 136.39535522460938,
+                                "color": [
+                                    1.0,
+                                    0.9607843137254902,
+                                    0.43137254901960786
+                                ],
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    },
+                    "scalarOpacity": {
+                        "type": "piecewiseLinearFunction",
+                        "points": [
+                            {
+                                "x": 0.0,
+                                "y": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 35.0,
+                                "y": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 65.0,
+                                "y": 0.4677419066429138,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 136.6434326171875,
+                                "y": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 255.0,
+                                "y": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 255.00000000000003,
+                                "y": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 255.00000000000006,
+                                "y": 0.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    },
+                    "gradientOpacity": {
+                        "type": "piecewiseLinearFunction",
+                        "points": [
+                            {
+                                "x": 0.0,
+                                "y": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            },
+                            {
+                                "x": 255.0,
+                                "y": 1.0,
+                                "midpoint": 0.5,
+                                "sharpness": 0.0
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "off white dry skull",
+    "author": "@muratmaga"
+}
