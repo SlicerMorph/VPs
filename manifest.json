@@ -11,6 +11,16 @@
       "description": "off white dry skull"
     },
     {
+      "prefix": "diceCT_16",
+      "json_filename": "diceCT_16.vp.json",
+      "png_filename": "diceCT_16.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/diceCT_16.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/diceCT_16.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "unsigned 16 bit"
+    },
+    {
       "prefix": "Skin",
       "json_filename": "Skin.vp.json",
       "png_filename": "Skin.png",
