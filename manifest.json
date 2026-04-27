@@ -9,6 +9,16 @@
       "author": "@muratmaga",
       "contributor": "@muratmaga",
       "description": "off white dry skull"
+    },
+    {
+      "prefix": "Skin",
+      "json_filename": "Skin.vp.json",
+      "png_filename": "Skin.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Skin.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/Skin.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "Render skin, 8bit"
     }
   ]
 }
