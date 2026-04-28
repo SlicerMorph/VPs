@@ -139,8 +139,10 @@ def _validate_points(
     """
     Validate a transfer-function point list.
 
-    numeric_value_keys: ("y",) for piecewise functions.
-    other_value_keys: ("color",) for RGB transfer.
+    numeric_value_keys lists required point fields that must be JSON numbers
+    (for example, ("y",) for piecewise functions).
+    other_value_keys lists required point fields validated by callers after
+    common point validation (for example, ("color",) for RGB transfer).
     Returns the normalized list (preserves order, drops unknown keys).
     """
     if not isinstance(points, list):
@@ -195,7 +197,9 @@ def _validate_pwf(node: Any, context: str) -> dict:
         )
     return {
         "type": "piecewiseLinearFunction",  # normalize legacy alias
-        "points": _validate_points(node["points"], ("y",), context),
+        "points": _validate_points(
+            node["points"], numeric_value_keys=("y",), context=context
+        ),
     }
 
 
@@ -207,7 +211,12 @@ def _validate_ctf(node: Any, context: str) -> dict:
         raise ValidationError(
             f"{context}.type must be 'colorTransferFunction'."
         )
-    points = _validate_points(node["points"], (), context, ("color",))
+    points = _validate_points(
+        node["points"],
+        numeric_value_keys=(),
+        context=context,
+        other_value_keys=("color",),
+    )
     for i, pt in enumerate(points):
         color = pt["color"]
         if not (isinstance(color, list) and len(color) == 3
