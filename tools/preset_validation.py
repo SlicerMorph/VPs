@@ -130,7 +130,12 @@ def _require_keys(d: dict, allowed: Iterable[str], context: str) -> None:
         )
 
 
-def _validate_points(points: Any, value_keys: tuple[str, ...], context: str) -> list[dict]:
+def _validate_points(
+    points: Any,
+    value_keys: tuple[str, ...],
+    context: str,
+    numeric_value_keys: tuple[str, ...] = (),
+) -> list[dict]:
     """
     Validate a transfer-function point list.
 
@@ -159,7 +164,8 @@ def _validate_points(points: Any, value_keys: tuple[str, ...], context: str) -> 
         for vk in value_keys:
             if vk not in pt:
                 raise ValidationError(f"{context}.points[{i}] missing '{vk}'.")
-            if vk != "color" and not _is_number(pt[vk]):
+        for vk in numeric_value_keys:
+            if not _is_number(pt[vk]):
                 raise ValidationError(f"{context}.points[{i}].{vk} must be a number.")
         for opt in ("midpoint", "sharpness"):
             if opt in pt and not _is_number(pt[opt]):
@@ -181,7 +187,7 @@ def _validate_pwf(node: Any, context: str) -> dict:
         )
     return {
         "type": "piecewiseLinearFunction",  # normalize legacy alias
-        "points": _validate_points(node["points"], ("y",), context),
+        "points": _validate_points(node["points"], ("y",), context, ("y",)),
     }
 
 

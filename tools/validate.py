@@ -32,11 +32,12 @@ PNG_RE  = re.compile(r"^([A-Za-z0-9_-]+)\.png$")
 def _preset_path(path: Path) -> Path | None:
     candidate = path if path.is_absolute() else ROOT / path
     try:
+        presets_root = (ROOT / "presets").resolve()
         candidate = candidate.resolve(strict=False)
-        candidate.relative_to((ROOT / "presets").resolve())
+        relative_path = candidate.relative_to(presets_root)
     except ValueError:
         return None
-    return candidate
+    return presets_root / relative_path
 
 
 def check_pair(json_path: Path, png_path: Path) -> tuple:
