@@ -2,7 +2,11 @@ name: Validate preset PR
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   validate:
@@ -12,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -24,13 +28,46 @@ jobs:
           python -m pip install --upgrade pip
           pip install jsonschema Pillow
 
-      - name: Run validator
+      - name: Compute changed files
+        id: changed
         env:
-          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          python3 tools/validate.py --pr
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_SHA" || true
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          printf '%s\n' "$CHANGED"
+          {
+            echo "files<<__EOF__"
+            printf '%s\n' "$CHANGED"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Comment on PR (success)
-        if: success()
+      - name: Enforce file allowlist for bot/preset-* PRs
+        if: startsWith(github.event.pull_request.head.ref, 'bot/preset-')
+        env:
+          CHANGED: ${{ steps.changed.outputs.files }}
         run: |
-          echo "Validation passed. If you want to download the JSON, use the Raw link from the file in this PR or after merge from the `presets/` directory." 
+          set -euo pipefail
+          # Only these path patterns are permitted in a bot preset PR.
+          ALLOW_REGEX='^(presets/[A-Za-z0-9_-]+\.(vp\.json|png)|manifest\.json|README\.md)$'
+          BAD=""
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! [[ "$f" =~ $ALLOW_REGEX ]]; then
+              BAD="$BAD$f"$'\n'
+            fi
+          done <<< "$CHANGED"
+          if [ -n "$BAD" ]; then
+            echo "::error::bot/preset-* PR touched files outside the allowlist:"
+            printf '%s' "$BAD"
+            exit 1
+          fi
+          echo "All changed files are within the bot allowlist."
+
+      - name: Run strict validator
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+        run: python3 tools/validate.py --pr

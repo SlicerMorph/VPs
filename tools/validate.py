@@ -1,131 +1,131 @@
 #!/usr/bin/env python3
 """
-Simple validator for VPs presets.
+Validator used in two contexts:
 
-Usage:
   - Local: python3 tools/validate.py --local <path/to/json> <path/to/png>
-  - CI: python3 tools/validate.py --pr (reads GITHUB_EVENT_PATH)
+  - CI:    python3 tools/validate.py --pr (reads $CHANGED_FILES, one path per line)
 
-The script validates JSON against schema/volume-property-schema-v1.0.0.json and checks PNG dimensions.
-If PNG exceeds 1024px in either dimension, it resamples to fit 1024 and overwrites the file.
+Behavior:
+  * Strictly validates the JSON via tools/preset_validation.py.
+  * Sanitizes the PNG in-place (re-encoded to OUTPUT_PNG_SIZE, metadata
+    stripped). On CI this means the PR may contain a slightly different PNG
+    than the one originally submitted -- which is the point.
+  * Filenames must be `<prefix>.vp.json` and `<prefix>.png` with matching
+    prefix.
 """
-import sys
+from __future__ import annotations
+
 import os
 import re
-import json
-from PIL import Image
-from jsonschema import validate, ValidationError
+import sys
+from pathlib import Path
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SCHEMA_PATH = os.path.join(ROOT, 'schema', 'volume-property-schema-v1.0.0.json')
-# JSON may be either <prefix>.json or <prefix>.vp.json; PNG is <prefix>.png
-JSON_RE = re.compile(r'^([A-Za-z0-9_-]+)(?:\.vp)?\.json$')
-PNG_RE = re.compile(r'^([A-Za-z0-9_-]+)\.png$')
-MAX_DIM = 1024
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
+from tools import preset_validation as pv  # noqa: E402
 
-def load_schema():
-    with open(SCHEMA_PATH, 'r') as fh:
-        return json.load(fh)
+JSON_RE = re.compile(r"^([A-Za-z0-9_-]+)(?:\.vp)?\.json$")
+PNG_RE  = re.compile(r"^([A-Za-z0-9_-]+)\.png$")
 
 
-def validate_json(path, schema):
-    with open(path, 'r') as fh:
-        data = json.load(fh)
-    validate(instance=data, schema=schema)
-
-
-def validate_png(path):
-    with Image.open(path) as im:
-        if im.format != 'PNG':
-            raise ValueError(f"File {path} is not PNG (format={im.format})")
-        w,h = im.size
-        if w > MAX_DIM or h > MAX_DIM:
-            # resample to fit
-            ratio = min(MAX_DIM / w, MAX_DIM / h)
-            new_size = (int(w*ratio), int(h*ratio))
-            im = im.resize(new_size, Image.LANCZOS)
-            im.save(path, format='PNG', optimize=True)
-            return ('resized', new_size)
-    return ('ok', (w,h))
-
-
-def check_pair(json_path, png_path):
-    # filename rules
-    jname = os.path.basename(json_path)
-    pname = os.path.basename(png_path)
+def check_pair(json_path: Path, png_path: Path) -> tuple:
+    jname = json_path.name
+    pname = png_path.name
     jm = JSON_RE.match(jname)
     pm = PNG_RE.match(pname)
     if not jm or not pm:
-        raise ValueError('Filenames must be <prefix>.png and <prefix>.json or <prefix>.vp.json with prefix matching /^[A-Za-z0-9_-]+$/')
-    jprefix = jm.group(1)
-    pprefix = pm.group(1)
-    if jprefix != pprefix:
-        raise ValueError('JSON and PNG must share identical filename prefix (e.g. Murat.vp.json and Murat.png have prefix "Murat")')
-    schema = load_schema()
-    validate_json(json_path, schema)
-    png_result = validate_png(png_path)
-    return png_result
+        raise ValueError(
+            "Filenames must be <prefix>.vp.json and <prefix>.png with prefix "
+            "matching /^[A-Za-z0-9_-]+$/"
+        )
+    if jm.group(1) != pm.group(1):
+        raise ValueError(
+            "JSON and PNG must share identical filename prefix "
+            f"(got {jm.group(1)!r} vs {pm.group(1)!r})"
+        )
+
+    pv.validate_prefix(jm.group(1))
+
+    raw = json_path.read_bytes()
+    normalized = pv.validate_and_normalize_json(raw)
+
+    # Re-emit JSON deterministically.
+    pv.write_normalized_json(normalized, json_path)
+
+    # Sanitize PNG in place.
+    original_dim = pv.sanitize_png(png_path, png_path)
+    return ("ok", original_dim)
 
 
-if __name__ == '__main__':
-    if '--local' in sys.argv:
-        try:
-            idx = sys.argv.index('--local')
-            j = sys.argv[idx+1]
-            p = sys.argv[idx+2]
-        except Exception:
-            print('Usage: python3 tools/validate.py --local <json> <png>')
-            sys.exit(2)
-        try:
-            res = check_pair(j,p)
-            print('Validation OK:', res)
-            sys.exit(0)
-        except ValidationError as e:
-            print('JSON Schema validation failed:', e)
-            sys.exit(3)
-        except Exception as e:
-            print('Validation error:', e)
-            sys.exit(4)
-    elif '--pr' in sys.argv:
-        # Minimal PR-mode: read event file for changed files
-        event_path = os.environ.get('GITHUB_EVENT_PATH')
-        if not event_path or not os.path.exists(event_path):
-            print('GITHUB_EVENT_PATH not set or file missing')
-            sys.exit(5)
-        with open(event_path, 'r') as fh:
-            ev = json.load(fh)
-        files = []
-        # try to extract changed files from pull_request event
-        commits = ev.get('commits')
-        if commits:
-            for c in commits:
-                files += c.get('added', []) + c.get('modified', [])
-        # fallback to pull_request.files (not always present in event payload)
-        if not files and 'pull_request' in ev:
-            pr = ev['pull_request']
-            # not listing files here; the workflow should provide a list
-            pass
-        files = list(dict.fromkeys(files))
-        if len(files) != 2:
-            print('PR must change exactly 2 files; found', len(files))
-            sys.exit(6)
-        # identify json and png
-        j = next((f for f in files if f.lower().endswith('.json')), None)
-        p = next((f for f in files if f.lower().endswith('.png')), None)
-        if not j or not p:
-            print('PR must include one .json and one .png')
-            sys.exit(7)
-        try:
-            res = check_pair(os.path.join(ROOT, j), os.path.join(ROOT, p))
-            print('PR validation OK:', res)
-            sys.exit(0)
-        except ValidationError as e:
-            print('JSON Schema validation failed:', e)
-            sys.exit(3)
-        except Exception as e:
-            print('Validation error:', e)
-            sys.exit(4)
+def _local() -> int:
+    try:
+        idx = sys.argv.index("--local")
+        j = Path(sys.argv[idx + 1])
+        p = Path(sys.argv[idx + 2])
+    except Exception:
+        print("Usage: python3 tools/validate.py --local <json> <png>")
+        return 2
+    try:
+        res = check_pair(j, p)
+        print("Validation OK:", res)
+        return 0
+    except pv.ValidationError as e:
+        print(f"Validation error: {e}")
+        return 3
+    except Exception as e:
+        print(f"Validation error: {e}")
+        return 4
+
+
+def _pr() -> int:
+    """
+    PR mode: reads $CHANGED_FILES (one path per line) supplied by the workflow.
+    Falls back to scanning everything under presets/ as a safety net.
+    """
+    raw = os.environ.get("CHANGED_FILES", "").strip()
+    if raw:
+        files = [Path(f.strip()) for f in raw.splitlines() if f.strip()]
     else:
-        print('Usage: --local or --pr')
-        sys.exit(2)
+        files = list((ROOT / "presets").glob("*"))
+
+    # Restrict to files inside presets/.
+    presets_files = [
+        f for f in files
+        if f.parts[:1] == ("presets",) or
+        (f.is_absolute() and "presets" in f.parts)
+    ]
+    if not presets_files:
+        print("No preset files changed; nothing to validate.")
+        return 0
+
+    json_files = [f for f in presets_files if f.name.endswith(".json")]
+    png_files  = [f for f in presets_files if f.name.endswith(".png")]
+    if len(json_files) != 1 or len(png_files) != 1:
+        print(
+            f"PR must change exactly one .vp.json and one .png under presets/; "
+            f"got json={[str(f) for f in json_files]} png={[str(f) for f in png_files]}"
+        )
+        return 6
+
+    j = json_files[0] if json_files[0].is_absolute() else ROOT / json_files[0]
+    p = png_files[0]  if png_files[0].is_absolute()  else ROOT / png_files[0]
+    try:
+        res = check_pair(j, p)
+        print("PR validation OK:", res)
+        return 0
+    except pv.ValidationError as e:
+        print(f"Validation error: {e}")
+        return 3
+    except Exception as e:
+        print(f"Validation error: {e}")
+        return 4
+
+
+if __name__ == "__main__":
+    if "--local" in sys.argv:
+        sys.exit(_local())
+    if "--pr" in sys.argv:
+        sys.exit(_pr())
+    print("Usage: --local <json> <png>  |  --pr  (reads $CHANGED_FILES)")
+    sys.exit(2)

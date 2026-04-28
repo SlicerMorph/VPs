@@ -2,7 +2,7 @@ name: Process preset submission
 
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, edited, labeled]
 
 permissions:
   issues: write
@@ -11,16 +11,24 @@ permissions:
 
 jobs:
   process:
-    if: startsWith(github.event.issue.title, 'New preset:')
+    # Trigger on submissions opened via the SlicerMorph module (title prefix)
+    # OR explicitly tagged with the preset-submission label.
+    if: >-
+      startsWith(github.event.issue.title, 'New preset:') ||
+      contains(github.event.issue.labels.*.name, 'preset-submission')
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
+          # We don't want git to use GITHUB_TOKEN-derived credentials,
+          # because PRs opened by GITHUB_TOKEN do NOT trigger downstream
+          # workflows (validate-preset / auto-merge). The script will
+          # configure the remote with an App installation token instead.
+          persist-credentials: false
 
-      - name: Add preset-submission label
+      - name: Add preset-submission label (idempotent)
         uses: actions/github-script@v7
         with:
           script: |
@@ -31,19 +39,44 @@ jobs:
                 issue_number: context.issue.number,
                 labels: ['preset-submission']
               })
-            } catch(e) { console.log('Label already set or error:', e.message) }
+            } catch (e) {
+              console.log('Label add skipped:', e.message)
+            }
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install boto3 -q
+        run: |
+          python -m pip install --upgrade pip
+          pip install "PyJWT[crypto]" boto3 Pillow jsonschema -q
 
-      - name: Validate and create PR
+      - name: Mint GitHub App installation token
+        id: app-token
         env:
-          ISSUE_BODY:   ${{ github.event.issue.body }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_TITLE:  ${{ github.event.issue.title }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          INGEST_APP_ID:          ${{ secrets.INGEST_APP_ID }}
+          INGEST_APP_PRIVATE_KEY: ${{ secrets.INGEST_APP_PRIVATE_KEY }}
+          GITHUB_REPOSITORY:      ${{ github.repository }}
+        run: python3 .github/scripts/mint_token.py
+
+      - name: Validate, sanitize, and create draft PR
+        env:
+          ISSUE_BODY:        ${{ github.event.issue.body }}
+          ISSUE_NUMBER:      ${{ github.event.issue.number }}
+          ISSUE_TITLE:       ${{ github.event.issue.title }}
+          ISSUE_AUTHOR:      ${{ github.event.issue.user.login }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          S3_ACCESS: ${{ secrets.ACCESS }}
-          S3_SECRET: ${{ secrets.SECRET }}
+          # Use the App installation token instead of GITHUB_TOKEN. PRs opened
+          # under this identity DO trigger downstream workflows.
+          GH_TOKEN:          ${{ steps.app-token.outputs.token }}
+          # Used to construct the bot's git author identity / commit email.
+          INGEST_APP_ID:     ${{ secrets.INGEST_APP_ID }}
+          S3_ACCESS:         ${{ secrets.ACCESS }}
+          S3_SECRET:         ${{ secrets.SECRET }}
+          # Kill switch — set repo variable INGEST_ENABLED to "true" to enable.
+          # Any other value (including unset) causes the script to comment on
+          # the issue and exit cleanly without making changes.
+          INGEST_ENABLED:    ${{ vars.INGEST_ENABLED }}
         run: python3 .github/scripts/process_submission.py

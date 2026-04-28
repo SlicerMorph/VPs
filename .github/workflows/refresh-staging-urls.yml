@@ -1,5 +1,13 @@
 name: Refresh staging upload URLs
 
+# Maintains a fresh pair of presigned S3 PUT URLs on the dedicated
+# `staging-urls` branch (orphan branch containing only staging-urls.json).
+#
+# Why a separate branch?
+# `main` is protected (required status check `validate`). Pushing every 10
+# minutes to main would be blocked. The staging-urls.json file is ephemeral
+# upload metadata, not curated content, so it lives on its own branch which
+# can be freely (force-)pushed.
 on:
   schedule:
     - cron: '*/10 * * * *'   # every 10 minutes; URLs stay valid longer to tolerate cron drift
@@ -13,9 +21,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main (for the generator script)
+        uses: actions/checkout@v4
         with:
+          ref: main
           persist-credentials: true
+          fetch-depth: 1
 
       - name: Install boto3
         run: pip install boto3 -q
@@ -26,10 +37,22 @@ jobs:
           S3_SECRET: ${{ secrets.SECRET }}
         run: python3 .github/scripts/generate_staging_urls.py
 
-      - name: Commit staging-urls.json
+      - name: Push staging-urls.json to staging-urls branch
         run: |
+          set -euo pipefail
+          # Move the freshly generated file out of the working tree so
+          # we don't carry main's contents over to the orphan branch.
+          cp staging-urls.json /tmp/staging-urls.json
+          rm staging-urls.json
+          git fetch origin staging-urls
+          git checkout staging-urls
+          # Replace the file (orphan branch should only contain this file)
+          mv /tmp/staging-urls.json staging-urls.json
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add staging-urls.json
-          git diff --cached --quiet || git commit -m "chore: refresh staging upload URLs"
-          git push
+          if git diff --cached --quiet; then
+            echo "no changes"; exit 0
+          fi
+          git commit -m "chore: refresh staging upload URLs"
+          git push origin HEAD:staging-urls

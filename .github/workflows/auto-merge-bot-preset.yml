@@ -1,0 +1,47 @@
+name: Auto-merge bot preset PRs
+
+# Auto-merges PRs that meet ALL of:
+#   - Author is slicermorph-vps-bot[bot] (the GitHub App identity)
+#   - Head branch matches bot/preset-*
+#   - Carries the 'validated-preset' label (applied by ingest workflow)
+#   - The 'Validate preset PR' check has passed (enforced by branch protection)
+#
+# Branch protection on main must require the 'validate' job from validate-preset.yml
+# before this can actually merge — `--auto` waits for required checks.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, labeled, ready_for_review, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.user.login == 'slicermorph-vps-bot[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'bot/preset-') &&
+      contains(github.event.pull_request.labels.*.name, 'validated-preset')
+    steps:
+      - name: Mark PR ready for review (exit draft)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # `gh pr ready` is a no-op if already ready.
+          gh pr ready "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" || true
+
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --auto \
+            --squash \
+            --delete-branch
