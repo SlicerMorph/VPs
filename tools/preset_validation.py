@@ -117,6 +117,10 @@ def _check_finite_numbers(node: Any, path: str) -> None:
             _check_finite_numbers(v, f"{path}[{i}]")
 
 
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def _require_keys(d: dict, allowed: Iterable[str], context: str) -> None:
     extras = set(d.keys()) - set(allowed)
     if extras:
@@ -126,11 +130,19 @@ def _require_keys(d: dict, allowed: Iterable[str], context: str) -> None:
         )
 
 
-def _validate_points(points: Any, value_keys: tuple[str, ...], context: str) -> list[dict]:
+def _validate_points(
+    points: Any,
+    numeric_value_keys: tuple[str, ...],
+    context: str,
+    other_value_keys: tuple[str, ...] = (),
+) -> list[dict]:
     """
     Validate a transfer-function point list.
 
-    value_keys: ("y",) for piecewise functions, ("color",) for RGB transfer.
+    numeric_value_keys lists required point fields that must be JSON numbers
+    (for example, ("y",) for piecewise functions).
+    other_value_keys lists required point fields validated by callers after
+    common point validation (for example, ("color",) for RGB transfer).
     Returns the normalized list (preserves order, drops unknown keys).
     """
     if not isinstance(points, list):
@@ -143,20 +155,30 @@ def _validate_points(points: Any, value_keys: tuple[str, ...], context: str) -> 
         )
 
     normalized: list[dict] = []
-    allowed_point_keys = {"x", "midpoint", "sharpness", *value_keys}
+    allowed_point_keys = {
+        "x",
+        "midpoint",
+        "sharpness",
+        *numeric_value_keys,
+        *other_value_keys,
+    }
     for i, pt in enumerate(points):
         if not isinstance(pt, dict):
             raise ValidationError(f"{context}.points[{i}] must be an object.")
         _require_keys(pt, allowed_point_keys, f"{context}.points[{i}]")
         if "x" not in pt:
             raise ValidationError(f"{context}.points[{i}] missing 'x'.")
-        if not isinstance(pt["x"], (int, float)):
+        if not _is_number(pt["x"]):
             raise ValidationError(f"{context}.points[{i}].x must be a number.")
-        for vk in value_keys:
-            if vk not in pt:
-                raise ValidationError(f"{context}.points[{i}] missing '{vk}'.")
+        for keys in (numeric_value_keys, other_value_keys):
+            for vk in keys:
+                if vk not in pt:
+                    raise ValidationError(f"{context}.points[{i}] missing '{vk}'.")
+        for vk in numeric_value_keys:
+            if not _is_number(pt[vk]):
+                raise ValidationError(f"{context}.points[{i}].{vk} must be a number.")
         for opt in ("midpoint", "sharpness"):
-            if opt in pt and not isinstance(pt[opt], (int, float)):
+            if opt in pt and not _is_number(pt[opt]):
                 raise ValidationError(
                     f"{context}.points[{i}].{opt} must be a number."
                 )
@@ -175,7 +197,9 @@ def _validate_pwf(node: Any, context: str) -> dict:
         )
     return {
         "type": "piecewiseLinearFunction",  # normalize legacy alias
-        "points": _validate_points(node["points"], ("y",), context),
+        "points": _validate_points(
+            node["points"], numeric_value_keys=("y",), context=context
+        ),
     }
 
 
@@ -187,11 +211,16 @@ def _validate_ctf(node: Any, context: str) -> dict:
         raise ValidationError(
             f"{context}.type must be 'colorTransferFunction'."
         )
-    points = _validate_points(node["points"], ("color",), context)
+    points = _validate_points(
+        node["points"],
+        numeric_value_keys=(),
+        context=context,
+        other_value_keys=("color",),
+    )
     for i, pt in enumerate(points):
         color = pt["color"]
         if not (isinstance(color, list) and len(color) == 3
-                and all(isinstance(c, (int, float)) for c in color)):
+                and all(_is_number(c) for c in color)):
             raise ValidationError(
                 f"{context}.points[{i}].color must be a 3-element numeric array."
             )
@@ -206,7 +235,7 @@ def _validate_lighting(node: Any) -> dict:
     for k in ALLOWED_LIGHTING_KEYS:
         if k not in node:
             raise ValidationError(f"component.lighting.{k} is required.")
-        if not isinstance(node[k], (int, float)):
+        if not _is_number(node[k]):
             raise ValidationError(f"component.lighting.{k} must be a number.")
         out[k] = node[k]
     return out
@@ -218,9 +247,7 @@ def _validate_component(component: Any) -> dict:
     _require_keys(component, ALLOWED_COMPONENT_KEYS, "component")
 
     required = {
-        "componentWeight": (int, float),
         "shade": bool,
-        "scalarOpacityUnitDistance": (int, float),
         "rgbTransferFunction": dict,
         "scalarOpacity": dict,
         "gradientOpacity": dict,
@@ -230,6 +257,11 @@ def _validate_component(component: Any) -> dict:
             raise ValidationError(f"component.{k} is required.")
         if not isinstance(component[k], t):
             raise ValidationError(f"component.{k} has unexpected type.")
+    for k in ("componentWeight", "scalarOpacityUnitDistance"):
+        if k not in component:
+            raise ValidationError(f"component.{k} is required.")
+        if not _is_number(component[k]):
+            raise ValidationError(f"component.{k} must be a number.")
 
     out = {
         "componentWeight": component["componentWeight"],
@@ -269,13 +301,13 @@ def _validate_volume_property(vp: Any) -> dict:
 
     effective_range = vp.get("effectiveRange", [0.0, 0.0])
     if (not isinstance(effective_range, list) or len(effective_range) != 2
-            or not all(isinstance(x, (int, float)) for x in effective_range)):
+            or not all(_is_number(x) for x in effective_range)):
         raise ValidationError(
             "volumeProperties[0].effectiveRange must be a 2-element numeric array."
         )
 
     iso = vp.get("isoSurfaceValues", [])
-    if not isinstance(iso, list) or not all(isinstance(x, (int, float)) for x in iso):
+    if not isinstance(iso, list) or not all(_is_number(x) for x in iso):
         raise ValidationError(
             "volumeProperties[0].isoSurfaceValues must be an array of numbers."
         )
@@ -283,6 +315,9 @@ def _validate_volume_property(vp: Any) -> dict:
         raise ValidationError(
             f"volumeProperties[0].isoSurfaceValues has too many entries ({len(iso)})."
         )
+    for k in ("clippedVoxelIntensity", "scatteringAnisotropy"):
+        if k in vp and not _is_number(vp[k]):
+            raise ValidationError(f"volumeProperties[0].{k} must be a number.")
 
     out = {
         "effectiveRange": list(effective_range),
