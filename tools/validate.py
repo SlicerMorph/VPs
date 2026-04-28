@@ -29,7 +29,7 @@ JSON_RE = re.compile(r"^([A-Za-z0-9_-]+)(?:\.vp)?\.json$")
 PNG_RE  = re.compile(r"^([A-Za-z0-9_-]+)\.png$")
 
 
-def _preset_path(path: Path) -> Path | None:
+def _safe_preset_path(path: Path) -> Path | None:
     candidate = path if path.is_absolute() else ROOT / path
     try:
         presets_root = (ROOT / "presets").resolve()
@@ -101,7 +101,7 @@ def _pr() -> int:
         files = list((ROOT / "presets").glob("*"))
 
     # Restrict to files inside this repository's presets/ directory.
-    presets_files = [p for f in files if (p := _preset_path(f)) is not None]
+    presets_files = [p for f in files if (p := _safe_preset_path(f)) is not None]
     if not presets_files:
         print("No preset files changed; nothing to validate.")
         return 0

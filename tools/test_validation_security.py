@@ -14,12 +14,12 @@ class PresetValidationSecurityTests(unittest.TestCase):
     def setUp(self):
         self.preset = json.loads((ROOT / "presets" / "Skin.vp.json").read_text())
 
-    def _rejects_bool_at(self, path):
+    def _rejects_bool_at(self, field_path):
         data = copy.deepcopy(self.preset)
         node = data
-        for part in path[:-1]:
+        for part in field_path[:-1]:
             node = node[part]
-        node[path[-1]] = True
+        node[field_path[-1]] = True
 
         with self.assertRaisesRegex(pv.ValidationError, "number|numeric"):
             pv.validate_and_normalize_json(json.dumps(data).encode())
@@ -39,11 +39,11 @@ class PresetValidationSecurityTests(unittest.TestCase):
 
     def test_pr_changed_files_are_limited_to_repo_presets_directory(self):
         self.assertEqual(
-            validate._preset_path(Path("presets/Skin.vp.json")),
+            validate._safe_preset_path(Path("presets/Skin.vp.json")),
             (ROOT / "presets" / "Skin.vp.json").resolve(),
         )
-        self.assertIsNone(validate._preset_path(Path("presets/../README.md")))
-        self.assertIsNone(validate._preset_path(Path("/tmp/presets/Skin.vp.json")))
+        self.assertIsNone(validate._safe_preset_path(Path("presets/../README.md")))
+        self.assertIsNone(validate._safe_preset_path(Path("/tmp/presets/Skin.vp.json")))
 
 
 if __name__ == "__main__":

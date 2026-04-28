@@ -153,8 +153,13 @@ def _validate_points(
         )
 
     normalized: list[dict] = []
-    value_keys = (*numeric_value_keys, *other_value_keys)
-    allowed_point_keys = {"x", "midpoint", "sharpness", *value_keys}
+    allowed_point_keys = {
+        "x",
+        "midpoint",
+        "sharpness",
+        *numeric_value_keys,
+        *other_value_keys,
+    }
     for i, pt in enumerate(points):
         if not isinstance(pt, dict):
             raise ValidationError(f"{context}.points[{i}] must be an object.")
@@ -163,9 +168,10 @@ def _validate_points(
             raise ValidationError(f"{context}.points[{i}] missing 'x'.")
         if not _is_number(pt["x"]):
             raise ValidationError(f"{context}.points[{i}].x must be a number.")
-        for vk in value_keys:
-            if vk not in pt:
-                raise ValidationError(f"{context}.points[{i}] missing '{vk}'.")
+        for keys in (numeric_value_keys, other_value_keys):
+            for vk in keys:
+                if vk not in pt:
+                    raise ValidationError(f"{context}.points[{i}] missing '{vk}'.")
         for vk in numeric_value_keys:
             if not _is_number(pt[vk]):
                 raise ValidationError(f"{context}.points[{i}].{vk} must be a number.")
