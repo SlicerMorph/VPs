@@ -39,6 +39,16 @@
       "author": "@muratmaga",
       "contributor": "@muratmaga",
       "description": "Skin and Skeleton, 8 bit"
+    },
+    {
+      "prefix": "VolumeProperty",
+      "json_filename": "VolumeProperty.vp.json",
+      "png_filename": "VolumeProperty.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/VolumeProperty.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/VolumeProperty.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "test"
     }
   ]
 }
