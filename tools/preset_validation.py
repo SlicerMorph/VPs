@@ -132,14 +132,15 @@ def _require_keys(d: dict, allowed: Iterable[str], context: str) -> None:
 
 def _validate_points(
     points: Any,
-    value_keys: tuple[str, ...],
+    numeric_value_keys: tuple[str, ...],
     context: str,
-    numeric_value_keys: tuple[str, ...] = (),
+    other_value_keys: tuple[str, ...] = (),
 ) -> list[dict]:
     """
     Validate a transfer-function point list.
 
-    value_keys: ("y",) for piecewise functions, ("color",) for RGB transfer.
+    numeric_value_keys: ("y",) for piecewise functions.
+    other_value_keys: ("color",) for RGB transfer.
     Returns the normalized list (preserves order, drops unknown keys).
     """
     if not isinstance(points, list):
@@ -152,6 +153,7 @@ def _validate_points(
         )
 
     normalized: list[dict] = []
+    value_keys = (*numeric_value_keys, *other_value_keys)
     allowed_point_keys = {"x", "midpoint", "sharpness", *value_keys}
     for i, pt in enumerate(points):
         if not isinstance(pt, dict):
@@ -187,7 +189,7 @@ def _validate_pwf(node: Any, context: str) -> dict:
         )
     return {
         "type": "piecewiseLinearFunction",  # normalize legacy alias
-        "points": _validate_points(node["points"], ("y",), context, ("y",)),
+        "points": _validate_points(node["points"], ("y",), context),
     }
 
 
@@ -199,7 +201,7 @@ def _validate_ctf(node: Any, context: str) -> dict:
         raise ValidationError(
             f"{context}.type must be 'colorTransferFunction'."
         )
-    points = _validate_points(node["points"], ("color",), context)
+    points = _validate_points(node["points"], (), context, ("color",))
     for i, pt in enumerate(points):
         color = pt["color"]
         if not (isinstance(color, list) and len(color) == 3
