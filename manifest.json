@@ -11,6 +11,16 @@
       "description": "off white dry skull"
     },
     {
+      "prefix": "CT-Chest-Contrast-Enhanced",
+      "json_filename": "CT-Chest-Contrast-Enhanced.vp.json",
+      "png_filename": "CT-Chest-Contrast-Enhanced.png",
+      "json_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/CT-Chest-Contrast-Enhanced.vp.json",
+      "png_raw_url": "https://raw.githubusercontent.com/SlicerMorph/VPs/main/presets/CT-Chest-Contrast-Enhanced.png",
+      "author": "@muratmaga",
+      "contributor": "@muratmaga",
+      "description": "Murat's SlicerMorph demo"
+    },
+    {
       "prefix": "diceCT_16",
       "json_filename": "diceCT_16.vp.json",
       "png_filename": "diceCT_16.png",
