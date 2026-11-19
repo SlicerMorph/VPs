@@ -1,6 +1,6 @@
 {
-  "uuid": "a11246c8-f4c6-403f-9b7e-30290dd27e89",
-  "json_url": "https://js2.jetstream-cloud.org:8001/vp-staging/a11246c8-f4c6-403f-9b7e-30290dd27e89.vp.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d16527123c7f4cc98384010de685487c%2F20261119%2FRegionOne%2Fs3%2Faws4_request&X-Amz-Date=20261119T005400Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&X-Amz-Signature=36e36e1922ff1035e3a2caf98f52973551546f68ce10dc44b18ed6625b3e2759",
-  "png_url": "https://js2.jetstream-cloud.org:8001/vp-staging/a11246c8-f4c6-403f-9b7e-30290dd27e89.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d16527123c7f4cc98384010de685487c%2F20261119%2FRegionOne%2Fs3%2Faws4_request&X-Amz-Date=20261119T005400Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&X-Amz-Signature=013a4abe555eb0d62ab3af57ca393b32d62e471e966a158bd2f153d7c48bffdb",
-  "expires_at": "2026-11-19T02:54:00Z"
+  "uuid": "f49ed60d-2a5d-4674-8812-6d5bffe8785d",
+  "json_url": "https://js2.jetstream-cloud.org:8001/vp-staging/f49ed60d-2a5d-4674-8812-6d5bffe8785d.vp.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d16527123c7f4cc98384010de685487c%2F20261119%2FRegionOne%2Fs3%2Faws4_request&X-Amz-Date=20261119T083608Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&X-Amz-Signature=b7695c65f45cf13046c9277af0dcec0c4f2e46a31a5a8e0b1315235c6e85ad6a",
+  "png_url": "https://js2.jetstream-cloud.org:8001/vp-staging/f49ed60d-2a5d-4674-8812-6d5bffe8785d.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d16527123c7f4cc98384010de685487c%2F20261119%2FRegionOne%2Fs3%2Faws4_request&X-Amz-Date=20261119T083608Z&X-Amz-Expires=7200&X-Amz-SignedHeaders=host&X-Amz-Signature=1def20db194b1bcbfc3909d3160d2bc2bc677d09f3701d7038f47357470ad3cd",
+  "expires_at": "2026-11-19T10:36:08Z"
 }
